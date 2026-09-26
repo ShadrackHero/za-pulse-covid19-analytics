@@ -1,6 +1,6 @@
-# Data dictionary (Day 1 draft)
+# Data dictionary
 
-This is the planned model. Tables are created from Day 2 onward. Schemas exist after Day 1B.
+Schemas exist after Day 1. Dimension and landing tables exist after Day 2. Fact tables are still planned (Day 5).
 
 ## Province codes
 
@@ -18,70 +18,91 @@ This is the planned model. Tables are created from Day 2 onward. Schemas exist a
 | UNKNOWN | Not allocated to a province |
 | ZA | National total (only if we store a roll-up row) |
 
-## Planned core tables
+## Naming
 
-### `core.dim_province`
+Schemas stay lowercase: `raw`, `stg`, `core`, `meta`.  
+Tables and columns are PascalCase and quoted in SQL: `core."DimProvince"`, `"ProvinceCode"`.
 
-| Column | Meaning |
-|---|---|
-| province_code | Primary key. See table above. |
-| province_name | Full name |
-| population | Used for per-100k measures. Source SRC-005. |
-| region_group | Optional grouping (e.g. coastal / inland) |
+## Core tables created on Day 2
 
-### `core.dim_date`
+### `core."DimProvince"` — 10 rows
 
 | Column | Meaning |
 |---|---|
-| date_key | Date, one row per day |
-| year, quarter, month, week | Calendar parts |
-| weekday | Day name |
-| is_weekend | Saturday or Sunday |
-| wave_name | Filled later from events |
+| ProvinceCode | Primary key. See table above. |
+| ProvinceName | Full name |
+| Population | NULL until SRC-005 is loaded. Used for per-100k measures. |
+| RegionGroup | `coastal`, `inland`, or `unallocated` |
+| IsNational | Always FALSE in this seed. No ZA roll-up row. |
 
-### `core.dim_event`
+### `core."DimDate"` — 1036 rows (2020-03-01 to 2022-12-31)
 
 | Column | Meaning |
 |---|---|
-| event_id | Surrogate key |
-| event_name | Lockdown level or wave label |
-| start_date | Inclusive |
-| end_date | Inclusive or null |
-| event_type | `lockdown` or `wave` |
+| DateKey | Date, primary key, one row per day |
+| YearNum, QuarterNum, MonthNum | Calendar parts |
+| MonthName | Full month name |
+| WeekIso | ISO week number |
+| WeekdayNum | Monday = 1 … Sunday = 7 |
+| WeekdayName | Full weekday name |
+| IsWeekend | Saturday or Sunday |
+| YearMonth | `YYYY-MM` |
+| WaveName | Filled from DimEvent wave bands after seed |
 
-### `core.fact_provincial_daily`
+### `core."DimEvent"`
+
+| Column | Meaning |
+|---|---|
+| EventId | Surrogate key |
+| EventName | Lockdown level, wave label, or milestone |
+| EventType | `lockdown`, `wave`, or `milestone` |
+| StartDate | Inclusive |
+| EndDate | Inclusive (milestone is a single day) |
+| DatePrecision | `official` (gov.za) or `approximate` (wave bands) |
+| Notes | Short context |
+| SourceNote | Where the dates came from |
+
+## Raw tables created on Day 2 (empty)
+
+`raw."Confirmed"`, `raw."Recoveries"`, `raw."Deaths"`, `raw."Vaccination"`.
+
+Wide landing copies of the official files. Dates stay TEXT. Province codes are columns, not rows. Vaccination has no `UnknownCount` column because the source file has no UNKNOWN header.
+
+## Meta tables created on Day 2
+
+### `meta."Source"`
+
+Registry of SRC-001 … SRC-007. Seeded on Day 2.
+
+### `meta."LoadLog"`
+
+One row per ingest run: when, which source, how many rows, success or fail. Empty until Day 3.
+
+### `meta."ManualObservation"`
+
+Notes typed by hand (reporting lag, holidays, corrections). Empty until a later day.
+
+## Planned later
+
+### `core."FactProvincialDaily"` (Day 5)
 
 Grain: one row per province per date.
 
 | Column | Meaning |
 |---|---|
-| report_date | Reporting date |
-| province_code | FK to dim_province |
-| cum_confirmed | Cumulative confirmed cases |
-| cum_recovered | Cumulative recoveries |
-| cum_deaths | Cumulative deaths |
-| cum_vaccinated | Cumulative vaccine doses (not necessarily unique people) |
-| new_confirmed | Today minus yesterday |
-| new_recovered | Today minus yesterday |
-| new_deaths | Today minus yesterday |
-| new_vaccinated | Today minus yesterday |
-| active_cases | cum_confirmed − cum_recovered − cum_deaths |
-| dq_flag | Set when a value goes backwards or turns negative |
-| source_id | Which official file fed the row |
-
-## Planned meta tables
-
-### `meta.source`
-
-Registry of SRC-001 … SRC-007.
-
-### `meta.load_log`
-
-One row per ingest run: when, which source, how many rows, success or fail.
-
-### `meta.manual_observation`
-
-Notes typed by hand (reporting lag, holidays, corrections).
+| ReportDate | Reporting date |
+| ProvinceCode | FK to DimProvince |
+| CumConfirmed | Cumulative confirmed cases |
+| CumRecovered | Cumulative recoveries |
+| CumDeaths | Cumulative deaths |
+| CumVaccinated | Cumulative vaccine doses (not necessarily unique people) |
+| NewConfirmed | Today minus yesterday |
+| NewRecovered | Today minus yesterday |
+| NewDeaths | Today minus yesterday |
+| NewVaccinated | Today minus yesterday |
+| ActiveCases | CumConfirmed − CumRecovered − CumDeaths |
+| DqFlag | Set when a value goes backwards or turns negative |
+| SourceId | Which official file fed the row |
 
 ## Important definitions
 
