@@ -36,7 +36,7 @@ GitHub
 | Layer | Tool |
 |---|---|
 | Database | PostgreSQL |
-| Admin | pgAdmin 4 (not MySQL Workbench) |
+| Admin | pgAdmin 4 |
 | Analysis | Jupyter notebooks in `/notebooks` |
 | Report | Power BI Desktop + DAX |
 | Version control | GitHub + GitHub Desktop |
