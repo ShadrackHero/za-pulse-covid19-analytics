@@ -1,0 +1,11 @@
+ProvinceCode,ProvinceName,Population,Year,SourceName,SourceUrl,Notes
+EC,Eastern Cape,6676590,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+FS,Free State,2932441,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+GP,Gauteng,15810388,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+KZN,KwaZulu-Natal,11513575,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+LP,Limpopo,5926724,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+MP,Mpumalanga,4743584,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+NC,Northern Cape,1303047,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+NW,North West,4122854,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+WC,Western Cape,7113776,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,Provincial total. Not a census count.
+UNKNOWN,Not allocated,,2021,Stats SA Mid-year population estimates 2021 (P0302),https://www.statssa.gov.za/publications/P0302/P03022021.pdf,No population. Leave Population NULL.
