@@ -391,6 +391,110 @@ This week is 25 Jun–1 Jul 2021. Prior week is 18–24 Jun 2021.
 
 ---
 
+## New Cases per 100k
+
+Folder: Rates. Format: Decimal number `#,0.0`. Day 8.
+
+On one day this is that day’s incidence. On a date range it is period incidence (sum of new cases in the window).
+
+```dax
+New Cases per 100k :=
+DIVIDE (
+    [Confirmed (New)],
+    [Population]
+) * 100000
+```
+
+| Filter on 1 July 2021 | Expect |
+|---|---:|
+| Gauteng | 81.0 |
+| Nine official provinces | 35.9 |
+
+12,806 ÷ 15,810,388 × 100,000 = 81.0.  
+21,583 ÷ 60,142,979 × 100,000 = 35.9.
+
+UNKNOWN stays blank.
+
+---
+
+## Confirmed (7-day avg) per 100k
+
+Folder: Rates. Format: Decimal number `#,0.0`. Day 8.
+
+```dax
+Confirmed (7-day avg) per 100k :=
+DIVIDE (
+    [Confirmed (7-day avg)],
+    [Population]
+) * 100000
+```
+
+| Filter on 1 July 2021 | Expect |
+|---|---:|
+| Gauteng | 67.1 |
+| Nine official provinces | 28.1 |
+
+---
+
+## Report Context
+
+Folder: Change. Format: Text. Day 8 page title card.
+
+`ISFILTERED` only sees a direct filter on `ProvinceName`. A slicer on `ProvinceCode`, a visual-level filter on other cards, or Edit interactions set to None all leave this card saying South Africa.
+
+A Between date slicer is a range. Only print “as of” when the window is a single day. KPI cards still use the last report date inside that window.
+
+```dax
+Report Context :=
+VAR ProvList =
+    CALCULATETABLE (
+        VALUES ( 'core DimProvince'[ProvinceName] ),
+        'core DimProvince'[ProvinceName] <> "Not allocated"
+    )
+VAR ProvCount =
+    COUNTROWS ( ProvList )
+VAR Prov =
+    SWITCH (
+        TRUE (),
+        ProvCount = 1,
+            MINX ( ProvList, 'core DimProvince'[ProvinceName] ),
+        ProvCount >= 9,
+            "South Africa",
+        CONCATENATEX (
+            ProvList,
+            'core DimProvince'[ProvinceName],
+            ", ",
+            'core DimProvince'[ProvinceName],
+            ASC
+        )
+    )
+VAR DateStart =
+    MIN ( 'core DimDate'[DateKey] )
+VAR DateEnd =
+    MAX ( 'core DimDate'[DateKey] )
+VAR DateText =
+    IF (
+        DateStart = DateEnd,
+        "as of " & FORMAT ( DateStart, "dd mmm yyyy" ),
+        FORMAT ( DateStart, "dd mmm yyyy" )
+            & " – "
+            & FORMAT ( DateEnd, "dd mmm yyyy" )
+    )
+RETURN
+Prov & "  ·  " & DateText
+```
+
+| Filter | Expect |
+|---|---|
+| Date both ends 1 July 2021, no province | South Africa  ·  as of 01 Jul 2021 |
+| Date both ends 1 July 2021, Gauteng | Gauteng  ·  as of 01 Jul 2021 |
+| Date 26 Dec 2021 to 9 May 2022, no province | South Africa  ·  26 Dec 2021 – 09 May 2022 |
+| Two provinces, same range | Eastern Cape, Gauteng  ·  26 Dec 2021 – 09 May 2022 |
+
+Snapshot KPIs still use the last report date inside the window. The title only describes the window.
+
+---
+
 ## How to test in the report
 
 Slicers: `DimDate[DateKey]` = 1 July 2021, `DimProvince[ProvinceName]` = Gauteng.
