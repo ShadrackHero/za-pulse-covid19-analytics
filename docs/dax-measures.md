@@ -495,6 +495,209 @@ Snapshot KPIs still use the last report date inside the window. The title only d
 
 ---
 
+## Vaccinated (7-day avg)
+
+Folder: Outcomes. Format: Decimal number `#,0.0`. Day 9.
+
+```dax
+Vaccinated (7-day avg) :=
+VAR AnchorDate =
+    MAX ( 'core DimDate'[DateKey] )
+VAR LastSeven =
+    DATESINPERIOD ( 'core DimDate'[DateKey], AnchorDate, -7, DAY )
+RETURN
+AVERAGEX (
+    LastSeven,
+    [Vaccinated (New)]
+)
+```
+
+No golden number on 1 July 2021. Negative daily doses are revisions (`REV_VAX`). `AVERAGEX` includes them.
+
+---
+
+## Doses per 100k
+
+Folder: Rates. Format: Decimal number `#,0.0`. Day 9.
+
+```dax
+Doses per 100k :=
+DIVIDE (
+    [Vaccinated (Cumulative)],
+    [Population]
+) * 100000
+```
+
+| Filter on 1 July 2021 | Expect |
+|---|---:|
+| Gauteng | 4,990.5 |
+| Nine official provinces | 5,470.1 |
+
+789,010 ÷ 15,810,388 × 100,000 = 4,990.5.  
+3,289,900 ÷ 60,142,979 × 100,000 = 5,470.1.
+
+This is Dose Coverage % × 100,000. UNKNOWN stays blank.
+
+---
+
+## Share of National Doses %
+
+Folder: Change. Format: Percentage, 2 decimals. Day 9.
+
+```dax
+Share of National Doses % :=
+DIVIDE (
+    [Vaccinated (Cumulative)],
+    CALCULATE (
+        [Vaccinated (Cumulative)],
+        ALL ( 'core DimProvince' )
+    )
+)
+```
+
+| Filter on 1 July 2021 | Expect |
+|---|---:|
+| Gauteng | 23.98% |
+| No province selected | 100.00% |
+
+789,010 ÷ 3,289,900 = 0.239828.
+
+UNKNOWN stays in the denominator, same rule as Share of National %.
+
+---
+
+## Fact Rows
+
+Folder: Quality. Format: Whole number `#,0`. Day 9.
+
+```dax
+Fact Rows :=
+COUNTROWS ( 'core FactProvincialDaily' )
+```
+
+| Filter | Expect |
+|---|---:|
+| 1 July 2021, Gauteng | 1 |
+| 1 July 2021, nine official provinces | 9 |
+
+---
+
+## Flagged Rows
+
+Folder: Quality. Format: Whole number.
+
+```dax
+Flagged Rows :=
+CALCULATE (
+    COUNTROWS ( 'core FactProvincialDaily' ),
+    NOT ISBLANK ( 'core FactProvincialDaily'[DqFlag] )
+)
+```
+
+No series-wide golden number. Read it from the card.
+
+---
+
+## Flagged Share %
+
+Folder: Quality. Format: Percentage, 1 decimal.
+
+```dax
+Flagged Share % :=
+DIVIDE (
+    [Flagged Rows],
+    [Fact Rows]
+)
+```
+
+---
+
+## Flag Row Count
+
+Folder: Quality. Format: Whole number. Day 9.
+
+Needs the disconnected `DqFlag Catalogue` table from `docs/day-9-report.md` section 9A.
+
+```dax
+Flag Row Count :=
+VAR Code =
+    SELECTEDVALUE ( 'DqFlag Catalogue'[FlagCode] )
+RETURN
+IF (
+    ISBLANK ( Code ),
+    BLANK (),
+    CALCULATE (
+        COUNTROWS ( 'core FactProvincialDaily' ),
+        CONTAINSSTRING ( 'core FactProvincialDaily'[DqFlag], Code )
+    )
+)
+```
+
+One fact row can match more than one catalogue code. Bar totals can exceed Flagged Rows.
+
+---
+
+## Peak New Confirmed
+
+Folder: Change. Format: Whole number. Day 9.
+
+```dax
+Peak New Confirmed :=
+MAXX (
+    VALUES ( 'core DimDate'[DateKey] ),
+    [Confirmed (New)]
+)
+```
+
+---
+
+## Peak Date
+
+Folder: Change. Format: Date. Day 9.
+
+If two dates tie, this returns the earlier one.
+
+```dax
+Peak Date :=
+VAR PeakVal = [Peak New Confirmed]
+VAR PeakDays =
+    FILTER (
+        VALUES ( 'core DimDate'[DateKey] ),
+        [Confirmed (New)] = PeakVal
+    )
+RETURN
+MINX ( PeakDays, 'core DimDate'[DateKey] )
+```
+
+| Filter | Expect |
+|---|---|
+| 1 July 2021, Gauteng | Peak New Confirmed 12,806 · Peak Date 1 July 2021 |
+
+Do not quote a full-series peak in the README until you have read it off this measure with the date slicer cleared.
+
+---
+
+## Confirmed (14-day avg)
+
+Folder: Confirmed. Format: Decimal number `#,0.0`. Day 9 stretch.
+
+```dax
+Confirmed (14-day avg) :=
+VAR AnchorDate =
+    MAX ( 'core DimDate'[DateKey] )
+VAR LastFourteen =
+    DATESINPERIOD ( 'core DimDate'[DateKey], AnchorDate, -14, DAY )
+RETURN
+AVERAGEX (
+    LastFourteen,
+    [Confirmed (New)]
+)
+```
+
+No golden number tonight.
+
+---
+
 ## How to test in the report
 
 Slicers: `DimDate[DateKey]` = 1 July 2021, `DimProvince[ProvinceName]` = Gauteng.
